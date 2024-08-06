@@ -13,7 +13,7 @@ export const createPost = (req,res)=>{
         {
             if(result.affectedRows > 0)
             {
-                res.status(200).json({"message": "Short added successfully","short_id": "12345","status_code": 200});
+                res.status(200).json({"message": "Short added successfully","status_code": 200});
             }
             else
             {

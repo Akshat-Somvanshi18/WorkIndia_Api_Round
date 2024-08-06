@@ -1,8 +1,12 @@
 import db from "../server.js";
+import bcrypt from "bcrypt";
 
-export const registerUser = (req,res)=>{
+export const registerUser = async(req,res)=>{
 
     const {username,password,email} = req.body;
+
+    const hashedPassword = await bcrypt.hash(password,10);
+    
     const query1 = "SELECT * FROM user WHERE username = ? AND email = ?";
     const query2 = "INSERT INTO user (username,password,email) VALUES (?,?,?)";
 
@@ -18,11 +22,11 @@ export const registerUser = (req,res)=>{
             }
             else
             {
-                db.query(query2,[username,password,email], (error,result)=>{
+                db.query(query2,[username,hashedPassword,email], (error,result)=>{
                     if(error)
                         res.status(401).json({"error":error});
                     else
-                        res.status(200).json({ "status": "Account successfully created","status_code": 200,"user_id": "123445"});
+                        res.status(200).json({ "status": "Account successfully created","status_code": 200});
                 })
             }
         }
@@ -31,9 +35,9 @@ export const registerUser = (req,res)=>{
 }
 
 
-export const loginUser = ((req,res)=>{
+export const loginUser = (req,res)=>{
     const {username,password} = req.body;
-    const query = "SELECT * FROM user WHERE username = ? AND password = ?";
+    const query = "SELECT * FROM user WHERE username = ?";
     db.query(query,[username,password], (error,result)=>{
         if(error)
           res.status(401).json({status:error});
@@ -41,7 +45,12 @@ export const loginUser = ((req,res)=>{
         {
             if(result.length > 0)
             {
-                res.status(200).json({"status":"Login successful","status_code":200,"user_id":result[0].user_id});
+                const match = bcrypt.compare(result[0].password,password);
+                if(match)
+                  res.status(200).json({"status":"Login successful","status_code":200,"user_id":result[0].user_id});
+                else
+                  res.status(401).json({"status":"Incorrect username/password provided. Please retry","status_code":401});
+                  
             }
             else
             {
@@ -49,7 +58,7 @@ export const loginUser = ((req,res)=>{
             }
         }
     })
-})
+}
 
 export const getFeed = (req, res) => {
     const query = `SELECT post_id, category, title, author, publish_date, content, actual_content_link, image, upvote, downvote FROM post ORDER BY publish_date DESC, upvote DESC`;
